@@ -956,24 +956,15 @@ LLVMToSPIRV::handleBranchMerge(BranchInst *Branch, SPIRVBasicBlock *BB)
     BM->addLoopMergeInst(Merge->getId(), Continue->getId(), 0, BB);
 
   } else if (Branch->isConditional()) {
-    bool HasBackEdge = false;
+    // StructurizeCFG pass already manipulated CFG. Just use false block
+    // of branch instruction as merge block.
+    BasicBlock *MergeBB = Branch->getSuccessor(1);
 
-    for (unsigned i = 0; i < Branch->getNumSuccessors(); i++) {
-      if (LI.isLoopHeader(Branch->getSuccessor(i))) {
-        HasBackEdge = true;
-      }
-    }
-    if (!HasBackEdge) {
-      // StructurizeCFG pass already manipulated CFG. Just use false block
-      // of branch instruction as merge block.
-      BasicBlock *MergeBB = Branch->getSuccessor(1);
-
-      //
-      // Generate OpSelectionMerge.
-      //
-      SPIRVBasicBlock *Merge = static_cast<SPIRVBasicBlock *>(transValue(MergeBB, BB, false));
-      BM->addSelectionMergeInst(Merge->getId(), 0, BB);
-    }
+    //
+    // Generate OpSelectionMerge.
+    //
+    SPIRVBasicBlock *Merge = static_cast<SPIRVBasicBlock *>(transValue(MergeBB, BB, false));
+    BM->addSelectionMergeInst(Merge->getId(), 0, BB);
   }
 }
 /// An instruction may use an instruction from another BB which has not been
